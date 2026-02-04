@@ -1,0 +1,32 @@
+{
+  "name": "sendwhatsappmessage",
+  "version": "1.0.0",
+  "description": "WhatsApp bot with Gemini replies and MongoDB memory.",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ManuelPiresLuis01/sendWhatsappMessage.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ManuelPiresLuis01/sendWhatsappMessage/issues"
+  },
+  "homepage": "https://github.com/ManuelPiresLuis01/sendWhatsappMessage#readme",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongodb": "^6.12.0",
+    "node-cron": "^3.0.3",
+    "qrcode": "^1.5.3",
+    "whatsapp-web.js": "^1.26.0"
+  }
+}
