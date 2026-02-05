@@ -1,7 +1,39 @@
 import whatsappWeb from "whatsapp-web.js";
 import puppeteer from "puppeteer";
+import fs from "fs";
+import path from "path";
 
 const { Client, LocalAuth } = whatsappWeb;
+
+function resolveExecutablePath() {
+  const configuredPath = process.env.PUPPETEER_EXECUTABLE_PATH;
+
+  if (configuredPath && !configuredPath.includes("*")) {
+    return configuredPath;
+  }
+
+  if (configuredPath && configuredPath.includes("*")) {
+    try {
+      const baseDir = path.resolve("/opt/render/.cache/puppeteer/chrome");
+      const entries = fs.readdirSync(baseDir, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name)
+        .sort()
+        .reverse();
+
+      for (const entry of entries) {
+        const candidate = path.join(baseDir, entry, "chrome-linux64", "chrome");
+        if (fs.existsSync(candidate)) {
+          return candidate;
+        }
+      }
+    } catch (error) {
+      console.warn("Failed to resolve PUPPETEER_EXECUTABLE_PATH wildcard:", error?.message || error);
+    }
+  }
+
+  return puppeteer.executablePath();
+}
 
 export class WhatsAppClient {
   constructor() {
@@ -10,7 +42,7 @@ export class WhatsAppClient {
       puppeteer: {
         headless: "new",
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath()
+        executablePath: resolveExecutablePath()
       }
     });
 

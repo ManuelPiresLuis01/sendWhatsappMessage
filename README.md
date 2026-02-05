@@ -102,7 +102,7 @@ That runs:
 npx puppeteer browsers install chrome
 ```
 
-If Chrome isn’t found, set `PUPPETEER_EXECUTABLE_PATH` or keep the default; the app will use Puppeteer’s bundled Chrome automatically when installed.
+If Chrome isn’t found, the app will attempt to resolve the binary under `/opt/render/.cache/puppeteer/chrome/...` automatically. You can also set `PUPPETEER_EXECUTABLE_PATH` explicitly.
 
 ## Setup
 
