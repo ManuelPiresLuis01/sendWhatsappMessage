@@ -66,7 +66,6 @@ PORT=3000
 
 # Gemini
 GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL=gemini-1.5-flash
 
 # MongoDB (memory)
 MONGODB_URI=mongodb://localhost:27017
@@ -92,7 +91,7 @@ PUPPETEER_EXECUTABLE_PATH=
 
 ## Render Deployment (Chrome fix)
 
-Render doesn’t ship Chrome by default. This project installs Chrome at build time with:
+Render doesnï¿½t ship Chrome by default. This project installs Chrome at build time with:
 
 ```
 npm run postinstall

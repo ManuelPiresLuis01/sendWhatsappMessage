@@ -5,7 +5,6 @@ dotenv.config();
 const baseConfig = {
   port: Number(process.env.PORT || 3000),
   geminiApiKey: process.env.GEMINI_API_KEY || "",
-  geminiModel: process.env.GEMINI_MODEL || "gemini-1.5-flash",
   mongodbUri: process.env.MONGODB_URI || "",
   mongodbDbName: process.env.MONGODB_DB || "whatsapp_bot",
   memoryLimit: Number(process.env.MEMORY_LIMIT || 10)

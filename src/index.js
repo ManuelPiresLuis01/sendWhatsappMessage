@@ -7,6 +7,13 @@ import { MongoMessageStore } from "./infrastructure/memory/MongoMessageStore.js"
 
 const PING_INTERVAL_MS = 11 * 60 * 1000;
 
+const GEMINI_MODELS = [
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite"
+];
+
 async function main() {
   warnings.forEach((warning) => console.warn(warning));
 
@@ -23,7 +30,7 @@ async function main() {
   let messageGenerator = null;
 
   try {
-    messageGenerator = new GeminiMessageGenerator(config.geminiApiKey, config.geminiModel);
+    messageGenerator = new GeminiMessageGenerator(config.geminiApiKey, GEMINI_MODELS);
   } catch (error) {
     console.warn(error.message);
   }

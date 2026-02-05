@@ -48,21 +48,21 @@ function detectLanguage(text) {
     return "en";
   }
 
-  if (/[ãõáéíóúç]/i.test(text)) {
+  if (/[ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½]/i.test(text)) {
     return "pt";
   }
 
   const tokens = [
     "ola",
-    "olá",
+    "olï¿½",
     "bom",
     "boa",
     "tudo",
     "bem",
     "voce",
-    "você",
+    "vocï¿½",
     "nao",
-    "não",
+    "nï¿½o",
     "obrigado",
     "obrigada",
     "por",
@@ -141,16 +141,8 @@ export class AutoReplyMessage {
       reply = await this.messageGenerator.generate(prompt);
     } catch (error) {
       if (error?.status === 429) {
-        const delayMs = Math.max(getRetryDelayMs(error), 30000);
-        console.warn(`Rate limited. Retrying in ${Math.ceil(delayMs / 1000)}s...`);
-        await sleep(delayMs);
-
-        try {
-          reply = await this.messageGenerator.generate(prompt);
-        } catch (retryError) {
-          console.error("Gemini retry failed:", retryError);
-          reply = "right now I cant answer message, try again later";
-        }
+        console.warn("Rate limited. Skipping retry and sending fallback message.");
+        reply = "right now I cant answer message, try again later";
       } else {
         console.error("Gemini reply failed:", error);
         reply = "right now I cant answer message, try again later";

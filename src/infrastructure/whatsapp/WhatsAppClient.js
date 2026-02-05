@@ -1,23 +1,45 @@
-import whatsappWeb from "whatsapp-web.js";
+﻿import whatsappWeb from "whatsapp-web.js";
 import puppeteer from "puppeteer";
 import fs from "fs";
 import path from "path";
 
 const { Client, LocalAuth } = whatsappWeb;
 
+const PLATFORM = process.platform;
+const CACHE_VARIANTS = {
+  win32: [{ dir: "chrome-win64", exe: "chrome.exe" }],
+  linux: [{ dir: "chrome-linux64", exe: "chrome" }],
+  darwin: [
+    { dir: "chrome-mac-arm64", exe: "Chromium.app/Contents/MacOS/Chromium" },
+    { dir: "chrome-mac-x64", exe: "Chromium.app/Contents/MacOS/Chromium" }
+  ]
+};
+
+function fileExists(targetPath) {
+  return Boolean(targetPath) && fs.existsSync(targetPath);
+}
+
 function findChromeInCache(cacheDir) {
+  if (!cacheDir) return null;
+  const baseDir = path.join(cacheDir, "chrome");
+  if (!fs.existsSync(baseDir)) return null;
+
   try {
-    const baseDir = path.join(cacheDir, "chrome");
-    const entries = fs.readdirSync(baseDir, { withFileTypes: true })
+    const entries = fs
+      .readdirSync(baseDir, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
       .sort()
       .reverse();
 
+    const variants = CACHE_VARIANTS[PLATFORM] || CACHE_VARIANTS.linux;
+
     for (const entry of entries) {
-      const candidate = path.join(baseDir, entry, "chrome-linux64", "chrome");
-      if (fs.existsSync(candidate)) {
-        return candidate;
+      for (const variant of variants) {
+        const candidate = path.join(baseDir, entry, variant.dir, variant.exe);
+        if (fs.existsSync(candidate)) {
+          return candidate;
+        }
       }
     }
   } catch (_error) {
@@ -29,8 +51,7 @@ function findChromeInCache(cacheDir) {
 
 function resolveExecutablePath() {
   const configuredPath = process.env.PUPPETEER_EXECUTABLE_PATH;
-
-  if (configuredPath && !configuredPath.includes("*")) {
+  if (configuredPath && !configuredPath.includes("*") && fileExists(configuredPath)) {
     return configuredPath;
   }
 
@@ -39,7 +60,7 @@ function resolveExecutablePath() {
     cacheDir,
     "/opt/render/project/.cache/puppeteer",
     "/opt/render/.cache/puppeteer"
-  ].filter(Boolean);
+  ].filter((dir) => Boolean(dir) && fs.existsSync(dir));
 
   for (const dir of candidates) {
     const found = findChromeInCache(dir);
@@ -48,7 +69,31 @@ function resolveExecutablePath() {
     }
   }
 
-  return puppeteer.executablePath();
+  const puppeteerPath = puppeteer.executablePath();
+  if (fileExists(puppeteerPath)) {
+    return puppeteerPath;
+  }
+
+  if (PLATFORM === "win32") {
+    const programFiles = process.env["PROGRAMFILES"] || "C:\\Program Files";
+    const programFilesX86 = process.env["PROGRAMFILES(X86)"] || "C:\\Program Files (x86)";
+    const localAppData = process.env.LOCALAPPDATA;
+    const userProfile = process.env.USERPROFILE;
+    const winCandidates = [
+      localAppData && path.join(localAppData, "Google", "Chrome", "Application", "chrome.exe"),
+      programFiles && path.join(programFiles, "Google", "Chrome", "Application", "chrome.exe"),
+      programFilesX86 && path.join(programFilesX86, "Google", "Chrome", "Application", "chrome.exe"),
+      userProfile && path.join(userProfile, ".cache", "puppeteer", "chrome", "chrome-win64", "chrome.exe")
+    ].filter(Boolean);
+
+    for (const candidate of winCandidates) {
+      if (fileExists(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
+  return puppeteerPath;
 }
 
 export class WhatsAppClient {
