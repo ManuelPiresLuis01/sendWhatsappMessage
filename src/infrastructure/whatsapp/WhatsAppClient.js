@@ -1,4 +1,5 @@
 import whatsappWeb from "whatsapp-web.js";
+import puppeteer from "puppeteer";
 
 const { Client, LocalAuth } = whatsappWeb;
 
@@ -8,7 +9,8 @@ export class WhatsAppClient {
       authStrategy: new LocalAuth(),
       puppeteer: {
         headless: "new",
-        args: ["--no-sandbox", "--disable-setuid-sandbox"]
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath()
       }
     });
 

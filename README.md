@@ -84,7 +84,25 @@ EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_app_password_here
 SMTP_FROM=your_email@gmail.com
 SUPPORT_TO=manuelpiresluis@gmail.com
+
+# Puppeteer/Chrome (Render)
+PUPPETEER_EXECUTABLE_PATH=/opt/render/.cache/puppeteer/chrome/linux-*/chrome
 ```
+
+## Render Deployment (Chrome fix)
+
+Render doesn’t ship Chrome by default. This project installs Chrome at build time with:
+
+```
+npm run postinstall
+```
+
+That runs:
+```
+npx puppeteer browsers install chrome
+```
+
+If Chrome isn’t found, set `PUPPETEER_EXECUTABLE_PATH` or keep the default; the app will use Puppeteer’s bundled Chrome automatically when installed.
 
 ## Setup
 
