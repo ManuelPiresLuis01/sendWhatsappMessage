@@ -40,9 +40,7 @@ async function main() {
     messageGenerator,
     messageSender: whatsappClient,
     messageStore,
-    memoryLimit: config.memoryLimit,
-    dailyLimit: config.dailyLimit,
-    maxMessagesPerUser: config.maxMessagesPerUser
+    memoryLimit: config.memoryLimit
   });
 
   whatsappClient.onMessage(async (message) => {

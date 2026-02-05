@@ -1,6 +1,25 @@
 import { buildAutoReplyPrompt } from "../../domain/autoReplyPrompt.js";
 
-export function normalizeUserId(from) {
+const PLAN_CONFIG = {
+  free: {
+    dailyLimit: 30,
+    maxMessages: 200,
+    limitMessage: {
+      en: "You have reached your daily limit. Please come back tomorrow or upgrade to the premium plan.",
+      pt: "Voce atingiu o limite diario. Volte amanha ou faca upgrade para o plano premium."
+    }
+  },
+  premium: {
+    dailyLimit: 1000,
+    maxMessages: 1500,
+    limitMessage: {
+      en: "You have reached your daily limit. Please come back tomorrow or contact support for a higher plan.",
+      pt: "Voce atingiu o limite diario. Volte amanha ou fale com o suporte para um plano maior."
+    }
+  }
+};
+
+function normalizeUserId(from) {
   if (!from) {
     return "";
   }
@@ -29,21 +48,21 @@ function detectLanguage(text) {
     return "en";
   }
 
-  if (/[ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½]/i.test(text)) {
+  if (/[ãõáéíóúç]/i.test(text)) {
     return "pt";
   }
 
   const tokens = [
     "ola",
-    "olï¿½",
+    "olá",
     "bom",
     "boa",
     "tudo",
     "bem",
     "voce",
-    "vocï¿½",
+    "você",
     "nao",
-    "nï¿½o",
+    "não",
     "obrigado",
     "obrigada",
     "por",
@@ -56,26 +75,20 @@ function detectLanguage(text) {
   return matches >= 2 ? "pt" : "en";
 }
 
-function getLimitMessage(language) {
-  if (language === "pt") {
-    return "Voce atingiu o limite diario. Volte amanha ou faca upgrade para o plano premium.";
-  }
-
-  return "You have reached your daily limit. Please come back tomorrow or upgrade to the premium plan.";
-}
-
 function getDateKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function getPlanConfig(plan) {
+  return PLAN_CONFIG[plan] || PLAN_CONFIG.free;
+}
+
 export class AutoReplyMessage {
-  constructor({ messageGenerator, messageSender, messageStore, memoryLimit, dailyLimit, maxMessagesPerUser }) {
+  constructor({ messageGenerator, messageSender, messageStore, memoryLimit }) {
     this.messageGenerator = messageGenerator;
     this.messageSender = messageSender;
     this.messageStore = messageStore;
     this.memoryLimit = memoryLimit;
-    this.dailyLimit = dailyLimit;
-    this.maxMessagesPerUser = maxMessagesPerUser;
   }
 
   async execute(incomingMessage) {
@@ -90,26 +103,27 @@ export class AutoReplyMessage {
 
     const userId = normalizeUserId(incomingMessage.from);
     let memory = [];
+    let plan = "free";
 
     if (this.messageStore && userId) {
       await this.messageStore.ensureUser(userId);
+
+      const user = await this.messageStore.getUser(userId);
+      plan = user?.plan || "free";
+      const planConfig = getPlanConfig(plan);
+
       await this.messageStore.addMessage(userId, "user", incomingMessage.body);
       await this.messageStore.trimToLimit(userId, "user", this.memoryLimit);
-
-      if (this.maxMessagesPerUser) {
-        await this.messageStore.cleanUp(userId, this.maxMessagesPerUser);
-      }
+      await this.messageStore.cleanUp(userId, planConfig.maxMessages);
 
       const count = await this.messageStore.incrementDailyCount(userId, getDateKey());
-      if (count > this.dailyLimit) {
+      if (count > planConfig.dailyLimit) {
         const language = detectLanguage(incomingMessage.body);
-        const limitMessage = getLimitMessage(language);
+        const limitMessage = planConfig.limitMessage[language] || planConfig.limitMessage.en;
         await this.messageSender.sendMessage(incomingMessage.from, limitMessage);
         await this.messageStore.addMessage(userId, "bot", limitMessage);
         await this.messageStore.trimToLimit(userId, "bot", this.memoryLimit);
-        if (this.maxMessagesPerUser) {
-          await this.messageStore.cleanUp(userId, this.maxMessagesPerUser);
-        }
+        await this.messageStore.cleanUp(userId, planConfig.maxMessages);
         return;
       }
 
@@ -150,11 +164,10 @@ export class AutoReplyMessage {
     await this.messageSender.sendMessage(incomingMessage.from, reply);
 
     if (this.messageStore && userId) {
+      const planConfig = getPlanConfig(plan);
       await this.messageStore.addMessage(userId, "bot", reply);
       await this.messageStore.trimToLimit(userId, "bot", this.memoryLimit);
-      if (this.maxMessagesPerUser) {
-        await this.messageStore.cleanUp(userId, this.maxMessagesPerUser);
-      }
+      await this.messageStore.cleanUp(userId, planConfig.maxMessages);
     }
   }
 }

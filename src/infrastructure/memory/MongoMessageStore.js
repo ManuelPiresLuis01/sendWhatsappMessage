@@ -30,8 +30,41 @@ export class MongoMessageStore {
 
     await this.usersCollection.updateOne(
       { userId },
-      { $setOnInsert: { userId, firstMessageAt: new Date() } },
+      {
+        $setOnInsert: {
+          userId,
+          firstMessageAt: new Date(),
+          plan: "free",
+          supportTier: "basic",
+          adsEnabled: true
+        }
+      },
       { upsert: true }
+    );
+  }
+
+  async getUser(userId) {
+    if (!this.usersCollection) {
+      throw new Error("MongoMessageStore not connected");
+    }
+
+    return this.usersCollection.findOne({ userId });
+  }
+
+  async setUserPlan(userId, plan) {
+    if (!this.usersCollection) {
+      throw new Error("MongoMessageStore not connected");
+    }
+
+    await this.usersCollection.updateOne(
+      { userId },
+      {
+        $set: {
+          plan,
+          supportTier: plan === "premium" ? "priority" : "basic",
+          adsEnabled: plan !== "premium"
+        }
+      }
     );
   }
 

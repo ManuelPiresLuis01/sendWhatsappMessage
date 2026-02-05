@@ -8,9 +8,7 @@ const baseConfig = {
   geminiModel: process.env.GEMINI_MODEL || "gemini-1.5-flash",
   mongodbUri: process.env.MONGODB_URI || "",
   mongodbDbName: process.env.MONGODB_DB || "whatsapp_bot",
-  memoryLimit: Number(process.env.MEMORY_LIMIT || 10),
-  dailyLimit: Number(process.env.DAILY_LIMIT || 30),
-  maxMessagesPerUser: Number(process.env.MAX_MESSAGES_PER_USER || 200)
+  memoryLimit: Number(process.env.MEMORY_LIMIT || 10)
 };
 
 const warnings = [];
