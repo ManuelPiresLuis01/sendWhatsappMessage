@@ -5,6 +5,28 @@ import path from "path";
 
 const { Client, LocalAuth } = whatsappWeb;
 
+function findChromeInCache(cacheDir) {
+  try {
+    const baseDir = path.join(cacheDir, "chrome");
+    const entries = fs.readdirSync(baseDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort()
+      .reverse();
+
+    for (const entry of entries) {
+      const candidate = path.join(baseDir, entry, "chrome-linux64", "chrome");
+      if (fs.existsSync(candidate)) {
+        return candidate;
+      }
+    }
+  } catch (_error) {
+    return null;
+  }
+
+  return null;
+}
+
 function resolveExecutablePath() {
   const configuredPath = process.env.PUPPETEER_EXECUTABLE_PATH;
 
@@ -12,23 +34,17 @@ function resolveExecutablePath() {
     return configuredPath;
   }
 
-  if (configuredPath && configuredPath.includes("*")) {
-    try {
-      const baseDir = path.resolve("/opt/render/.cache/puppeteer/chrome");
-      const entries = fs.readdirSync(baseDir, { withFileTypes: true })
-        .filter((entry) => entry.isDirectory())
-        .map((entry) => entry.name)
-        .sort()
-        .reverse();
+  const cacheDir = process.env.PUPPETEER_CACHE_DIR;
+  const candidates = [
+    cacheDir,
+    "/opt/render/project/.cache/puppeteer",
+    "/opt/render/.cache/puppeteer"
+  ].filter(Boolean);
 
-      for (const entry of entries) {
-        const candidate = path.join(baseDir, entry, "chrome-linux64", "chrome");
-        if (fs.existsSync(candidate)) {
-          return candidate;
-        }
-      }
-    } catch (error) {
-      console.warn("Failed to resolve PUPPETEER_EXECUTABLE_PATH wildcard:", error?.message || error);
+  for (const dir of candidates) {
+    const found = findChromeInCache(dir);
+    if (found) {
+      return found;
     }
   }
 
@@ -37,12 +53,15 @@ function resolveExecutablePath() {
 
 export class WhatsAppClient {
   constructor() {
+    const executablePath = resolveExecutablePath();
+    console.log("Using Chrome executable:", executablePath);
+
     this.client = new Client({
       authStrategy: new LocalAuth(),
       puppeteer: {
         headless: "new",
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
-        executablePath: resolveExecutablePath()
+        executablePath
       }
     });
 

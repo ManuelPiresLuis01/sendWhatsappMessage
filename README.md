@@ -86,7 +86,8 @@ SMTP_FROM=your_email@gmail.com
 SUPPORT_TO=manuelpiresluis@gmail.com
 
 # Puppeteer/Chrome (Render)
-PUPPETEER_EXECUTABLE_PATH=/opt/render/.cache/puppeteer/chrome/linux-*/chrome
+PUPPETEER_CACHE_DIR=/opt/render/project/.cache/puppeteer
+PUPPETEER_EXECUTABLE_PATH=
 ```
 
 ## Render Deployment (Chrome fix)
@@ -99,10 +100,15 @@ npm run postinstall
 
 That runs:
 ```
-npx puppeteer browsers install chrome
+PUPPETEER_CACHE_DIR=/opt/render/project/.cache/puppeteer npx puppeteer browsers install chrome
 ```
 
-If Chrome isn’t found, the app will attempt to resolve the binary under `/opt/render/.cache/puppeteer/chrome/...` automatically. You can also set `PUPPETEER_EXECUTABLE_PATH` explicitly.
+At runtime, the app tries to find Chrome in:
+- `PUPPETEER_CACHE_DIR` (if set)
+- `/opt/render/project/.cache/puppeteer`
+- `/opt/render/.cache/puppeteer`
+
+If you set `PUPPETEER_EXECUTABLE_PATH`, **do not** use wildcards. Leave it blank unless you know the exact binary path.
 
 ## Setup
 
